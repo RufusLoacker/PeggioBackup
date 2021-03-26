@@ -1,8 +1,7 @@
-soggetti = ['Rufus', 'non è homo se']
-verbi = ['cade da', 'piange per colpa di', 'dà un bacio a']
-complementi = [
-    "il libro", "la palla", "la scuola", "il cane", 'l\'aereo'
-]
+contesti = ['']
+soggetti = ['Rufus']
+verbi = ['saluta']
+complementi = ['il cane']
 
 palla8 = [
     'Per quanto posso vedere, sì', 'È certo', 'È decisamente così',
