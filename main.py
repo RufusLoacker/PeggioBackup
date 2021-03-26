@@ -172,44 +172,35 @@ def costruisci_liste():
 	return contesti, soggetti, verbi, complementi
 
 @bot.command()
-async def nando(ctx, *, comando=None):
+async def nando(ctx, *, messaggio_in=None):
 	global flagDuplicato
 	global flagEliminazione
 
 	flagDuplicato = False
 	flagEliminazione = True
 
-	if comando:
-		comando = shlex.split(comando)
-		if comando[0] == 'aggiungi':
-			parola = comando[2]
-			if comando[1] == "soggetto":
-				aggiungi_nandata(ctx, comando[1], parola)
-			elif comando[1] == "verbo":
-				aggiungi_nandata(ctx, comando[1], parola)
-			elif comando[1] == "complemento":
-				aggiungi_nandata(ctx, comando[1], parola)
-			elif comando[1] == 'contesto':
-				aggiungi_nandata(ctx, comando[1], parola)
+	if messaggio_in:
+		messaggio = shlex.split(messaggio_in)
+		comando = messaggio[0]
+		if comando == "aggiungi":
+			subcomando = messaggio[1]
+			parola = messaggio[2]
+			if subcomando == "soggetto" or subcomando == "verbo" or subcomando == "complemento" or subcomando == "contesto":
+				aggiungi_nandata(ctx, subcomando, parola)
 			else:
 				await ctx.send('Non conosco il comando :(')
 				flagDuplicato = not flagDuplicato
 
 			if not flagDuplicato:
-				await ctx.send(f'*{parola}* aggiunto come *{comando[1]}*!')
+				await ctx.send(f'*{parola}* aggiunto come *{subcomando}*!')
 			else:
-				await ctx.send(f'Hey, questo {comando[1]} c\'è già!')
+				await ctx.send(f'Hey, questo {subcomando} c\'è già!')
 
-		elif comando[0] == "rimuovi":
-			parola = comando[2]
-			if comando[1] == "soggetto":
-				rimuovi_nandata(ctx, comando[1], parola)
-			elif comando[1] == "verbo":
-				rimuovi_nandata(ctx, comando[1], parola)
-			elif comando[1] == "complemento":
-				rimuovi_nandata(ctx, comando[1], parola)
-			elif comando[1] == "contesto":
-				rimuovi_nandata(ctx, comando[1], parola)
+		elif comando == "rimuovi":
+			subcomando = messaggio[1]
+			parola = messaggio[2]
+			if subcomando == "soggetto" or subcomando == "verbo" or subcomando == "complemento" or subcomando == "contesto":
+				rimuovi_nandata(ctx, subcomando, parola)
 			else:
 				await ctx.send('Non conosco il comando :(')
 				flagEliminazione = not flagEliminazione
@@ -219,7 +210,7 @@ async def nando(ctx, *, comando=None):
 			else:
 				await ctx.send(f'Non ho trovato *{parola}*!')
 
-		elif comando[0] == "lista":
+		elif comando == "lista":
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 
 			await ctx.send(f'**Contesti:** {sorted(contesti)}')
@@ -229,7 +220,7 @@ async def nando(ctx, *, comando=None):
 			await ctx.send(
 					f'Per aggiungere elementi, usare il comando `!nando aggiungi soggetto|verbo|complemento \"elemento da inserire\"`\nPer rimuovere elementi, usare il comando `!nando rimuovi soggetto|verbo|complemento \"elemento da rimuovere\"`'
 					)			
-		elif comando[0] == "stats":
+		elif comando == "stats":
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 			combinazioni = len(contesti) * len(soggetti) * len(verbi) * len(complementi)
 
