@@ -23,7 +23,62 @@ flagEliminazione = True
 
 @bot.event
 async def on_ready():
-	print('Bot is ready!')
+	print('PeggioBackup è pronto!')
+
+@bot.command()
+async def gatto(ctx, *, nome_gatto=None):
+
+	if ctx.message.attachments:
+		if nome_gatto:
+			gatto_pic = ctx.message.attachments[0].url
+			nome_gatto = nome_gatto.lower()
+			nomi_gatti = shlex.split(nome_gatto)
+			for nome in nomi_gatti:
+				if 'gatti' in db.keys():
+					gatti = db['gatti']
+					gatti.append((nome, gatto_pic))
+					db['gatti'] = gatti
+				else:
+					db['gatti'] = [(nome, gatto_pic)]
+				await ctx.send(f'foto di {nome.capitalize()} aggiunta al database!\nNon cancellare il tuo messaggio pls')
+		else:
+			await ctx.send("Rimanda la foto dicendomi chi è questo gatto!")
+	
+	else:
+		lista_gatto = []
+		embed = discord.Embed()
+		if nome_gatto:
+			nome_gatto = nome_gatto.lower()
+			if 'gatti' in db.keys():
+				gatti = db['gatti']
+				for gatto in gatti:
+					if gatto[0] == nome_gatto:
+						lista_gatto.append(gatto[1])
+				try:
+					msg_gatto = f'Ecco una foto di {nome_gatto.capitalize()}:'
+					gatto_url = random.choice(lista_gatto)
+					embed.set_image(url=gatto_url)
+				except:
+					msg_gatto = f'Non ho ancora foto di {nome_gatto.capitalize()}!'
+			else:
+				msg_gatto = "Non ci sono ancora gatti!"
+
+		else:
+			if 'gatti' in db.keys():
+				gatti = db['gatti']
+				for gatto in gatti:
+					lista_gatto.append(gatto[1])
+					msg_gatto = f'Ecco una foto di un gatto a caso:'
+					gatto_url = random.choice(lista_gatto)
+					embed.set_image(url=gatto_url)
+			else:
+				msg_gatto = "Non ci sono ancora gatti!"
+		
+		await ctx.send(msg_gatto, embed=embed)
+		
+			
+		
+
 
 
 # aliases: lista di comandi che triggerano la funzione
