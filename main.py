@@ -10,6 +10,8 @@ import variabili
 from replit import db
 import shlex
 import typing
+import tracemalloc
+from collections import Counter
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -41,15 +43,36 @@ async def gatto(ctx, *, nome_gatto=None):
 				else:
 					db['gatti'] = [(nome, gatto_pic)]
 				await ctx.send(f'foto di {nome.capitalize()} aggiunta al database!\nNon cancellare il tuo messaggio pls')
+				
 		else:
 			await ctx.send("Rimanda la foto dicendomi chi è questo gatto!")
 	
 	else:
 		lista_gatto = []
 		embed = discord.Embed()
+		flagEliminaGatto = False
+
 		if nome_gatto:
 			nome_gatto = nome_gatto.lower()
-			if 'gatti' in db.keys():
+			if "rimuovi" in nome_gatto:
+				nome_gatto = nome_gatto.lower()
+				comandi = shlex.split(nome_gatto)
+				comando = comandi [0]
+				url_da_eliminare = comandi[1]
+				gatti = db['gatti']
+				for gatto in gatti:
+					if url_da_eliminare in gatto:
+						indice = gatti.index(gatto)
+						del gatti[indice]
+						flagEliminaGatto = not flagEliminaGatto
+				db['gatti'] = gatti
+
+				if flagEliminaGatto:
+					msg_gatto = "Foto eliminata!"
+				else:
+					msg_gatto = "Non ho trovato la foto da eliminare!"
+
+			elif 'gatti' in db.keys():
 				gatti = db['gatti']
 				for gatto in gatti:
 					if gatto[0] == nome_gatto:
@@ -75,17 +98,15 @@ async def gatto(ctx, *, nome_gatto=None):
 				msg_gatto = "Non ci sono ancora gatti!"
 		
 		await ctx.send(msg_gatto, embed=embed)
-		
-			
-		
-
-
 
 # aliases: lista di comandi che triggerano la funzione
 @bot.command()
 async def ping(ctx):
 	await ctx.send(f'Pong! {round(bot.latency * 1000)}ms')
 
+@bot.command()
+async def sgrigna(ctx):
+	await ctx.send("La sgrigna (termine dialettale romagnolo) è una risata incontenibile, una ridarella. È quando inizi a ridere e non riesci a smettere e ridi per qualsiasi cosa.\n- *Alessandra Guardigli*")
 
 @bot.command()
 async def allineamento(ctx, *, messaggio_in=None):
@@ -226,6 +247,17 @@ def costruisci_liste():
 	
 	return contesti, soggetti, verbi, complementi
 
+async def split_lista(ctx, lista, nome_lista):
+	n = 10 # maximum chars
+	lista = sorted(lista)
+	chunks = [lista[i:i+n] for i in range(0, len(lista), n)]
+
+	for index, chunk in enumerate(chunks):
+		if not index:
+			await ctx.send(f'**{nome_lista}**\n{chunk}')
+		else:
+			await ctx.send(chunk)
+
 @bot.command()
 async def nando(ctx, *, messaggio_in=None):
 	global flagDuplicato
@@ -266,15 +298,18 @@ async def nando(ctx, *, messaggio_in=None):
 				await ctx.send(f'Non ho trovato *{parola}*!')
 
 		elif comando == "lista":
+			await ctx.send("Stiamo lavorando per voi!")
+			'''
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 
-			await ctx.send(f'**Contesti:** {sorted(contesti)}')
-			await ctx.send(f'**Soggetti:** {sorted(soggetti)}')
-			await ctx.send(f'**Verbi:** {sorted(verbi)}')
-			await ctx.send(f'**Complementi:** {sorted(complementi)}')
+			await split_lista(ctx, contesti, 'Contesti')
+			await split_lista(ctx, soggetti, 'Soggetti')
+			await split_lista(ctx, verbi, 'Verbi')
+			await split_lista(ctx, complementi, 'Complementi')
 			await ctx.send(
 					f'Per aggiungere elementi, usare il comando `!nando aggiungi soggetto|verbo|complemento \"elemento da inserire\"`\nPer rimuovere elementi, usare il comando `!nando rimuovi soggetto|verbo|complemento \"elemento da rimuovere\"`'
-					)			
+					)	
+			'''				
 		elif comando == "stats":
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 			combinazioni = len(contesti) * len(soggetti) * len(verbi) * len(complementi)
@@ -286,10 +321,16 @@ async def nando(ctx, *, messaggio_in=None):
 			await ctx.send(f'**Contesti:** {len(contesti):,}\n**Soggetti:** {len(soggetti):,}\n**Verbi:** {len(verbi):,}\n**Complementi:** {len(complementi):,}\nLe combinazioni possibili sono ben {combinazioni:,}. Accipicchia!\nSono state generate addirittura {num_nandate:,} nandate!')
 
 	else:
-		contesti, soggetti, verbi, complementi = costruisci_liste()
+		non_importa, soggetti, verbi, complementi = costruisci_liste()
+
+		if random.choice([True, False]):
+			contesti = variabili.contesti
+		else:
+			contesti = db["contesti"]
 
 		contesto_sceltoA = random.choice(contesti)
 		contesto_scelto = contesto_sceltoA[:1].upper() + contesto_sceltoA[1:]
+
 		soggetto_scelto = random.choice(soggetti)
 		if not contesto_scelto:
 			soggetto_scelto = soggetto_scelto[:1].upper() + soggetto_scelto[1:]
@@ -367,6 +408,8 @@ async def nando(ctx, *, messaggio_in=None):
 			nandata = nandata.replace(' su gli ', ' sugli ')
 		if ' su le ' in nandata:
 			nandata = nandata.replace(' su le ', ' sulle ')
+		if ' su l\'' in nandata:
+			nandata = nandata.replace(' su l\'', ' sull\'')		
 		if ' ,' in nandata:
 			nandata = nandata.replace(' ,', ',')
 
@@ -431,21 +474,27 @@ async def nohomo(ctx, *, comando=None):
 
 
 @bot.listen('on_message')
-async def hey_bot(message):
-		if message.author == bot.user:
+async def hey_bot(ctx):
+		if ctx.author == bot.user:
 				return
 
-		msg = message.content.lower()
+		msg = ctx.content.lower()
 		if msg.startswith('hey bot') or msg.startswith('hey culo'):
-				if message.author.name == "Rufus Loacker":
+				if ctx.author.name == "Rufus Loacker":
 						response = "Hey papà!"
-				elif message.author.name == "Kanmuri":
+				elif ctx.author.name == "Kanmuri":
 						response = "Hey admin del mondo!"
-				elif message.author.name == "CowardKnight":
+				elif ctx.author.name == "CowardKnight":
 						response = "Hey persona con gatti belli!"
 				else:
-						response = f'Hey {message.author.display_name}!'
-				await message.channel.send(response)
+						response = f'Hey {ctx.author.display_name}!'
+				await ctx.channel.send(response)
+		
+		if "good bot" in msg or "goodbot" in msg or "bravo bot" in msg:
+			await ctx.channel.send("Awwww, grazie <3 <3 <3")
+		if "bad bot" in msg or "badbot" in msg or "cattivo bot" in msg:
+			await ctx.channel.send("Così ferisci i miei sentimenti... :(")
+	
 
 
 @bot.command()
@@ -504,7 +553,6 @@ async def indovina(ctx):
 						break
 
 		await ctx.send("Grazie per aver giocato :)")
-
 
 keep_alive.keep_alive()
 bot.run(TOKEN)
