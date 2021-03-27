@@ -41,15 +41,36 @@ async def gatto(ctx, *, nome_gatto=None):
 				else:
 					db['gatti'] = [(nome, gatto_pic)]
 				await ctx.send(f'foto di {nome.capitalize()} aggiunta al database!\nNon cancellare il tuo messaggio pls')
+				
 		else:
 			await ctx.send("Rimanda la foto dicendomi chi è questo gatto!")
 	
 	else:
 		lista_gatto = []
 		embed = discord.Embed()
+		flagEliminaGatto = False
+
 		if nome_gatto:
 			nome_gatto = nome_gatto.lower()
-			if 'gatti' in db.keys():
+			if "rimuovi" in nome_gatto:
+				nome_gatto = nome_gatto.lower()
+				comandi = shlex.split(nome_gatto)
+				comando = comandi [0]
+				url_da_eliminare = comandi[1]
+				gatti = db['gatti']
+				for gatto in gatti:
+					if url_da_eliminare in gatto:
+						indice = gatti.index(gatto)
+						del gatti[indice]
+						flagEliminaGatto = not flagEliminaGatto
+				db['gatti'] = gatti
+
+				if flagEliminaGatto:
+					msg_gatto = "Foto eliminata!"
+				else:
+					msg_gatto = "Non ho trovato la foto da eliminare!"
+
+			elif 'gatti' in db.keys():
 				gatti = db['gatti']
 				for gatto in gatti:
 					if gatto[0] == nome_gatto:
@@ -286,10 +307,16 @@ async def nando(ctx, *, messaggio_in=None):
 			await ctx.send(f'**Contesti:** {len(contesti):,}\n**Soggetti:** {len(soggetti):,}\n**Verbi:** {len(verbi):,}\n**Complementi:** {len(complementi):,}\nLe combinazioni possibili sono ben {combinazioni:,}. Accipicchia!\nSono state generate addirittura {num_nandate:,} nandate!')
 
 	else:
-		contesti, soggetti, verbi, complementi = costruisci_liste()
+		non_importa, soggetti, verbi, complementi = costruisci_liste()
 
+		if random.choice([True, False]):
+			contesti = variabili.contesti
+		else:
+			contesti = db["contesti"]
+			
 		contesto_sceltoA = random.choice(contesti)
 		contesto_scelto = contesto_sceltoA[:1].upper() + contesto_sceltoA[1:]
+
 		soggetto_scelto = random.choice(soggetti)
 		if not contesto_scelto:
 			soggetto_scelto = soggetto_scelto[:1].upper() + soggetto_scelto[1:]
@@ -431,21 +458,27 @@ async def nohomo(ctx, *, comando=None):
 
 
 @bot.listen('on_message')
-async def hey_bot(message):
-		if message.author == bot.user:
+async def hey_bot(ctx):
+		if ctx.author == bot.user:
 				return
 
-		msg = message.content.lower()
+		msg = ctx.content.lower()
 		if msg.startswith('hey bot') or msg.startswith('hey culo'):
-				if message.author.name == "Rufus Loacker":
+				if ctx.author.name == "Rufus Loacker":
 						response = "Hey papà!"
-				elif message.author.name == "Kanmuri":
+				elif ctx.author.name == "Kanmuri":
 						response = "Hey admin del mondo!"
-				elif message.author.name == "CowardKnight":
+				elif ctx.author.name == "CowardKnight":
 						response = "Hey persona con gatti belli!"
 				else:
-						response = f'Hey {message.author.display_name}!'
-				await message.channel.send(response)
+						response = f'Hey {ctx.author.display_name}!'
+				await ctx.channel.send(response)
+		
+		if "good bot" in msg or "goodbot" in msg or "bravo bot" in msg:
+			await ctx.channel.send("Awwww, grazie <3 <3 <3")
+		if "bad bot" in msg or "badbot" in msg or "cattivo bot" in msg:
+			await ctx.channel.send("Così ferisci i miei sentimenti... :(")
+	
 
 
 @bot.command()
