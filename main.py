@@ -10,6 +10,8 @@ import variabili
 from replit import db
 import shlex
 import typing
+import tracemalloc
+from collections import Counter
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -96,17 +98,15 @@ async def gatto(ctx, *, nome_gatto=None):
 				msg_gatto = "Non ci sono ancora gatti!"
 		
 		await ctx.send(msg_gatto, embed=embed)
-		
-			
-		
-
-
 
 # aliases: lista di comandi che triggerano la funzione
 @bot.command()
 async def ping(ctx):
 	await ctx.send(f'Pong! {round(bot.latency * 1000)}ms')
 
+@bot.command()
+async def sgrigna(ctx):
+	await ctx.send("La sgrigna (termine dialettale romagnolo) è una risata incontenibile, una ridarella. È quando inizi a ridere e non riesci a smettere e ridi per qualsiasi cosa.\n- *Alessandra Guardigli*")
 
 @bot.command()
 async def allineamento(ctx, *, messaggio_in=None):
@@ -247,6 +247,17 @@ def costruisci_liste():
 	
 	return contesti, soggetti, verbi, complementi
 
+async def split_lista(ctx, lista, nome_lista):
+	n = 10 # maximum chars
+	lista = sorted(lista)
+	chunks = [lista[i:i+n] for i in range(0, len(lista), n)]
+
+	for index, chunk in enumerate(chunks):
+		if not index:
+			await ctx.send(f'**{nome_lista}**\n{chunk}')
+		else:
+			await ctx.send(chunk)
+
 @bot.command()
 async def nando(ctx, *, messaggio_in=None):
 	global flagDuplicato
@@ -287,15 +298,18 @@ async def nando(ctx, *, messaggio_in=None):
 				await ctx.send(f'Non ho trovato *{parola}*!')
 
 		elif comando == "lista":
+			await ctx.send("Stiamo lavorando per voi!")
+			'''
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 
-			await ctx.send(f'**Contesti:** {sorted(contesti)}')
-			await ctx.send(f'**Soggetti:** {sorted(soggetti)}')
-			await ctx.send(f'**Verbi:** {sorted(verbi)}')
-			await ctx.send(f'**Complementi:** {sorted(complementi)}')
+			await split_lista(ctx, contesti, 'Contesti')
+			await split_lista(ctx, soggetti, 'Soggetti')
+			await split_lista(ctx, verbi, 'Verbi')
+			await split_lista(ctx, complementi, 'Complementi')
 			await ctx.send(
 					f'Per aggiungere elementi, usare il comando `!nando aggiungi soggetto|verbo|complemento \"elemento da inserire\"`\nPer rimuovere elementi, usare il comando `!nando rimuovi soggetto|verbo|complemento \"elemento da rimuovere\"`'
-					)			
+					)	
+			'''				
 		elif comando == "stats":
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 			combinazioni = len(contesti) * len(soggetti) * len(verbi) * len(complementi)
@@ -313,7 +327,7 @@ async def nando(ctx, *, messaggio_in=None):
 			contesti = variabili.contesti
 		else:
 			contesti = db["contesti"]
-			
+
 		contesto_sceltoA = random.choice(contesti)
 		contesto_scelto = contesto_sceltoA[:1].upper() + contesto_sceltoA[1:]
 
@@ -394,6 +408,8 @@ async def nando(ctx, *, messaggio_in=None):
 			nandata = nandata.replace(' su gli ', ' sugli ')
 		if ' su le ' in nandata:
 			nandata = nandata.replace(' su le ', ' sulle ')
+		if ' su l\'' in nandata:
+			nandata = nandata.replace(' su l\'', ' sull\'')		
 		if ' ,' in nandata:
 			nandata = nandata.replace(' ,', ',')
 
@@ -537,7 +553,6 @@ async def indovina(ctx):
 						break
 
 		await ctx.send("Grazie per aver giocato :)")
-
 
 keep_alive.keep_alive()
 bot.run(TOKEN)
