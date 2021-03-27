@@ -182,13 +182,14 @@ async def lore(ctx, *, messaggio_in=None):
 		if len(messaggio) == 3:
 
 			comando = messaggio[0].lower()
-			argomento = messaggio[1].lower()
+			argomento = messaggio[1]
 			lore = messaggio[2]
 
 			if comando == "aggiungi":
 				aggiungi_nandata(ctx, argomento, lore)
+				aggiungi_nandata(ctx, 'argomenti_lore', argomento)
 				if not flagDuplicato:
-					msg_out = f'*Aggiunta la lore su {argomento}'
+					msg_out = f'Aggiunta la lore su **{argomento}**'
 				else:
 					msg_out = f'Hey, questa lore c\'è già!'
 
@@ -200,14 +201,26 @@ async def lore(ctx, *, messaggio_in=None):
 					msg_out = f'Non ho trovato la lore su {argomento}!'
 		
 		else:
-			argomento = messaggio_in.lower()
-			if argomento in db.keys():
-				lore = db[argomento]
-				lore = ''.join(lore)
-				print(lore, type(lore))
-				msg_out = f'Ecco la lore su **{argomento}**:\n{lore}'
+			comando = messaggio_in
+			if comando == 'lista':
+				if 'argomenti_lore' in db.keys():
+					argomenti = db['argomenti_lore']
+					msg_out = '**Ecco una lista della lore PN:**\n\n'
+					for elem in argomenti:
+						msg_out += elem + '\n'
+
+				else:
+					msg_out = 'Non ci sono ancora argomenti di cui parlare!'	
+
 			else:
-				msg_out = 'Non ho trovato la lore su questo argomento!'
+				argomento = comando
+				if argomento in db.keys():
+					lore = db[argomento]
+					lore = ''.join(lore)
+					print(lore, type(lore))
+					msg_out = f'Ecco la lore su **{argomento}**:\n{lore}'
+				else:
+					msg_out = 'Non ho trovato la lore su questo argomento!'
 	else:
 		msg_out = 'Devi scrivere l\'argomento su cui vuoi sapere la lore!'
 
