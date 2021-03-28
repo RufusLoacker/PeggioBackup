@@ -12,6 +12,8 @@ import shlex
 import typing
 import tracemalloc
 from collections import Counter
+from itertools import chain
+from collections import Counter
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -25,79 +27,109 @@ flagEliminazione = True
 
 @bot.event
 async def on_ready():
-	print('PeggioBackup è pronto!')
+	print('PeggioBot è pronto!')
 
 @bot.command()
-async def gatto(ctx, *, nome_gatto=None):
+async def gatto(ctx, *, comando=None):
+	global flagDuplicato
+	global flagEliminazione
+
+	flagDuplicato = False
+	flagEliminazione = True
+
+	msg_gatto = ''
+	embed = discord.Embed()
 
 	if ctx.message.attachments:
-		if nome_gatto:
+		if comando:
 			gatto_pic = ctx.message.attachments[0].url
-			nome_gatto = nome_gatto.lower()
-			nomi_gatti = shlex.split(nome_gatto)
-			for nome in nomi_gatti:
-				if 'gatti' in db.keys():
-					gatti = db['gatti']
-					gatti.append((nome, gatto_pic))
-					db['gatti'] = gatti
-				else:
-					db['gatti'] = [(nome, gatto_pic)]
-				await ctx.send(f'foto di {nome.capitalize()} aggiunta al database!\nNon cancellare il tuo messaggio pls')
-				
-		else:
-			await ctx.send("Rimanda la foto dicendomi chi è questo gatto!")
-	
-	else:
-		lista_gatto = []
-		embed = discord.Embed()
-		flagEliminaGatto = False
-
-		if nome_gatto:
-			nome_gatto = nome_gatto.lower()
-			if "rimuovi" in nome_gatto:
-				nome_gatto = nome_gatto.lower()
-				comandi = shlex.split(nome_gatto)
-				comando = comandi [0]
-				url_da_eliminare = comandi[1]
-				gatti = db['gatti']
-				for gatto in gatti:
-					if url_da_eliminare in gatto:
-						indice = gatti.index(gatto)
-						del gatti[indice]
-						flagEliminaGatto = not flagEliminaGatto
-				db['gatti'] = gatti
-
-				if flagEliminaGatto:
-					msg_gatto = "Foto eliminata!"
-				else:
-					msg_gatto = "Non ho trovato la foto da eliminare!"
-
-			elif 'gatti' in db.keys():
-				gatti = db['gatti']
-				for gatto in gatti:
-					if gatto[0] == nome_gatto:
-						lista_gatto.append(gatto[1])
-				try:
-					msg_gatto = f'Ecco una foto di {nome_gatto.capitalize()}:'
-					gatto_url = random.choice(lista_gatto)
-					embed.set_image(url=gatto_url)
-				except:
-					msg_gatto = f'Non ho ancora foto di {nome_gatto.capitalize()}!'
-			else:
-				msg_gatto = "Non ci sono ancora gatti!"
+			comando = comando.lower()
+			nomi_gatti = shlex.split(comando)
+			for nome_gatto in nomi_gatti:
+				# aggiunge l'url della foto gatto al database del gatto
+				aggiungi_nandata(ctx, nome_gatto, gatto_pic)
+				aggiungi_nandata(ctx, 'gatti_db', nome_gatto)
+				msg_gatto += f'foto di {nome_gatto.capitalize()} aggiunta al database!\n'
+			msg_gatto += f'Non cancellare questo messaggio pls'
 
 		else:
-			if 'gatti' in db.keys():
-				gatti = db['gatti']
-				for gatto in gatti:
-					lista_gatto.append(gatto[1])
-					msg_gatto = f'Ecco una foto di un gatto a caso:'
-					gatto_url = random.choice(lista_gatto)
-					embed.set_image(url=gatto_url)
+			msg_gatto = "Rimanda la foto dicendomi chi è questo gatto!"
+
+	elif comando:
+		comando = comando.lower()
+
+		if 'rimuovi' in comando:
+			comandi = shlex.split(comando)
+			nome_gatto = comandi[1]
+			url_gatto = comandi[2]
+			print(nome_gatto)
+			print(url_gatto)
+
+			if nome_gatto in db.keys():
+				# rimuovo la foto dal database del gatto
+				gatto_db = db[nome_gatto]
+				print("prima: ", gatto_db)
+				indice = gatto_db.index(url_gatto)
+				del gatto_db[indice]
+				if gatto_db:
+					db[nome_gatto] = gatto_db
+				else:
+					del db[nome_gatto]
+				print("dopo: ", gatto_db)
+
+				msg_gatto = f'Foto di {nome_gatto.capitalize()} eliminata!'
 			else:
-				msg_gatto = "Non ci sono ancora gatti!"
+				msg_gatto = f'Non ho trovato la foto di {nome_gatto.capitalize()} da eliminare!'
+			
 		
-		await ctx.send(msg_gatto, embed=embed)
+		elif 'lista' in comando:
+			if 'gatti_db' in db.keys():
+				gatti_db = sorted(db['gatti_db'])
+				tot_gatti = 0
+				msg_gatto += "Ecco la lista dei Peggiogatti:\n\n"
+				for gatto in gatti_db:
+					gatto_db = db[gatto]
+					quante_foto = len(gatto_db)
+					tot_gatti += quante_foto
+					msg_gatto += f'**{gatto.capitalize()}**: {quante_foto} foto\n'
+				msg_gatto += f'\nIn totale ci sono (circa) {tot_gatti} foto!'
+			else:
+				msg_gatto = "Hey, non ci sono ancora foto di gatti!"
+			
+			
+
+		
+		# il 'comando' sarà quindi il nome di un gatto. 
+		else:
+			nome_gatto = comando
+			# Se il nome del gatto è nel db...
+			if nome_gatto in db.keys():
+				print(db[nome_gatto])
+				gatto_url = random.choice(db[nome_gatto])
+				msg_gatto = f'Ecco una foto di {nome_gatto.capitalize()}:'
+				embed.set_image(url=gatto_url)
+			else:
+				msg_gatto = f'Non ho ancora foto di {nome_gatto.capitalize()}!'
+
+	# se non c'è nome di gatto, prende un gatto a caso
+	else:
+		lista_gatti = []
+		if 'gatti_db' in db.keys():
+			#scelgo un nome di gatto a caso
+			gatti_db = db['gatti_db']
+			gatto_casuale = random.choice(gatti_db)
+
+			#dal database del gatto scelto a caso, prendo una foto a caso
+			gatto_db = db[gatto_casuale]
+			foto_casuale = random.choice(gatto_db)
+
+			msg_gatto = f'Ecco una foto a caso di {gatto_casuale.capitalize()}:'
+			embed.set_image(url=foto_casuale)
+
+		else:
+			msg_gatto = "Hey, non ci sono ancora foto di gatti!"
+
+	await ctx.send(msg_gatto, embed=embed)			
 
 # aliases: lista di comandi che triggerano la funzione
 @bot.command()
@@ -254,7 +286,7 @@ async def palla8(ctx, *, domanda=None):
 
 def aggiungi_nandata(ctx, comando_in, parola):
 	global flagDuplicato
-	if ctx.invoked_with != 'allineamento':
+	if ctx.invoked_with == 'nando':
 		nome_db = comando_in[:-1] + comando_in[-1].replace('o', 'i')
 	else:
 		nome_db = comando_in
@@ -271,7 +303,7 @@ def aggiungi_nandata(ctx, comando_in, parola):
 
 def rimuovi_nandata(ctx, comando_in, parola):
 	global flagEliminazione
-	if ctx.invoked_with != 'allineamento':
+	if ctx.invoked_with == 'nando':
 		nome_db = comando_in[:-1] + comando_in[-1].replace('o', 'i')
 	else:
 		nome_db = comando_in
@@ -355,17 +387,18 @@ async def nando(ctx, *, messaggio_in=None):
 
 		elif comando == "lista":
 			await ctx.send("Stiamo lavorando per voi!")
-			'''
+
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 
-			await split_lista(ctx, contesti, 'Contesti')
-			await split_lista(ctx, soggetti, 'Soggetti')
-			await split_lista(ctx, verbi, 'Verbi')
-			await split_lista(ctx, complementi, 'Complementi')
+			print(f'**Contesti**: {sorted(contesti)}')
+			print(f'**Soggetti**: {sorted(soggetti)}')
+			print(f'**Verbi**: {sorted(verbi)}')
+			print(f'**Complementi**: {sorted(complementi)}')
+
 			await ctx.send(
 					f'Per aggiungere elementi, usare il comando `!nando aggiungi soggetto|verbo|complemento \"elemento da inserire\"`\nPer rimuovere elementi, usare il comando `!nando rimuovi soggetto|verbo|complemento \"elemento da rimuovere\"`'
 					)	
-			'''				
+						
 		elif comando == "stats":
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 			combinazioni = len(contesti) * len(soggetti) * len(verbi) * len(complementi)
@@ -528,31 +561,6 @@ async def nohomo(ctx, *, comando=None):
 				nohomo_out = nohomo_outA[:1].upper() + nohomo_outA[1:]
 				await ctx.send(f'Il saggio dice:\n*{nohomo_out}*')
 
-
-@bot.listen('on_message')
-async def hey_bot(ctx):
-		if ctx.author == bot.user:
-				return
-
-		msg = ctx.content.lower()
-		if msg.startswith('hey bot') or msg.startswith('hey culo'):
-				if ctx.author.name == "Rufus Loacker":
-						response = "Hey papà!"
-				elif ctx.author.name == "Kanmuri":
-						response = "Hey admin del mondo!"
-				elif ctx.author.name == "CowardKnight":
-						response = "Hey persona con gatti belli!"
-				else:
-						response = f'Hey {ctx.author.display_name}!'
-				await ctx.channel.send(response)
-		
-		if "good bot" in msg or "goodbot" in msg or "bravo bot" in msg:
-			await ctx.channel.send("Awwww, grazie <3 <3 <3")
-		if "bad bot" in msg or "badbot" in msg or "cattivo bot" in msg:
-			await ctx.channel.send("Così ferisci i miei sentimenti... :(")
-	
-
-
 @bot.command()
 async def indovina(ctx):
 		await ctx.send(
@@ -609,6 +617,39 @@ async def indovina(ctx):
 						break
 
 		await ctx.send("Grazie per aver giocato :)")
+
+@bot.listen('on_message')
+async def hey_bot(ctx):
+		if ctx.author == bot.user:
+				return
+
+		msg = ctx.content.lower()
+		if msg.startswith('hey bot') or msg.startswith('hey culo'):
+				if ctx.author.name == "Rufus Loacker":
+						response = "Hey papà!"
+				elif ctx.author.name == "Kanmuri":
+						response = "Hey admin del mondo!"
+				elif ctx.author.name == "CowardKnight":
+						response = "Hey persona con gatti belli!"
+				else:
+						response = f'Hey {ctx.author.display_name}!'
+				await ctx.channel.send(response)
+		
+		lista_good = ['good bot', 'goodbot', 'bravo bot']
+		if any(x in msg for x in lista_good):
+			await ctx.channel.send(f'Awwww, grazie {ctx.author.display_name} <3 <3 <3')
+		
+		lista_bad = ['bad bot', 'badbot', 'cattivo bot']
+		if any(x in msg for x in lista_bad):
+			await ctx.channel.send(f'Così ferisci i miei sentimenti {ctx.author.display_name}... :(')
+		
+		lista_grazie = ['thanks bot', 'thanksbot', 'grazie bot', 'grazie culo']
+		if any(x in msg for x in lista_grazie):
+			await ctx.channel.send("Prego! ^_^")
+
+		lista_oliver = ['vero oliver']
+		if any(x in msg for x in lista_oliver):
+			await ctx.channel.send("Quello di Rufus, ovviamente.")
 
 keep_alive.keep_alive()
 bot.run(TOKEN)
