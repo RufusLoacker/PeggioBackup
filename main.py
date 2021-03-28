@@ -630,11 +630,16 @@ async def hey_bot(ctx):
 						response = f'Hey {ctx.author.display_name}!'
 				await ctx.channel.send(response)
 		
-		if "good bot" in msg or "goodbot" in msg or "bravo bot" in msg:
-			await ctx.channel.send("Awwww, grazie <3 <3 <3")
-		if "bad bot" in msg or "badbot" in msg or "cattivo bot" in msg:
-			await ctx.channel.send("Così ferisci i miei sentimenti... :(")
-		if "thanks bot" in msg or "thanksbot" in msg or "grazie bot" in msg:
+		lista_bravo = ['good bot', 'goodbot', 'bravo bot']
+		if any(x in msg for x in lista_cattivo)
+			await ctx.channel.send(f'Awwww, grazie {ctx.author.display_name} <3 <3 <3')
+		
+		lista_bad = ['bad bot', 'badbot', 'cattivo bot']
+		if any(x in msg for x in lista_cattivo)
+			await ctx.channel.send(f'Così ferisci i miei sentimenti {ctx.author.display_name}... :(')
+		
+		lista_grazie = ['thanks bot', 'thanksbot', 'grazie bot', 'grazie culo']
+		if any(x in msg for x in lista_grazie)
 			await ctx.channel.send("Prego! ^_^")
 
 keep_alive.keep_alive()
