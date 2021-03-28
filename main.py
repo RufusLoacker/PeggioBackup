@@ -111,23 +111,16 @@ async def gatto(ctx, *, comando=None):
 	else:
 		lista_gatti = []
 		if 'gatti_db' in db.keys():
-			for nome_gatto in db['gatti_db']:
-				# leggo il db del singolo gatto
-				gatto_db = db[nome_gatto]
-				# aggiungo tutte le foto del singolo gatto alla lista completa
-				lista_gatti.append(gatto_db)
-				
-			print('vecchia: ', lista_gatti)
-			nuova_lista_gatti = []
-			for elem in lista_gatti:
-				for url in elem:
-					if url not in nuova_lista_gatti:
-						nuova_lista_gatti.append(url)
-			print('nuova: ', nuova_lista_gatti)
+			#scelgo un nome di gatto a caso
+			gatti_db = db['gatti_db']
+			gatto_casuale = random.choice(gatti_db)
 
-			msg_gatto = f'Ecco una foto di un gatto a caso:'
-			gatto_url = random.choice(nuova_lista_gatti)
-			embed.set_image(url=gatto_url)
+			#dal database del gatto scelto a caso, prendo una foto a caso
+			gatto_db = db[gatto_casuale]
+			foto_casuale = random.choice(gatto_db)
+
+			msg_gatto = f'Ecco una foto a caso di {gatto_casuale.capitalize()}:'
+			embed.set_image(url=foto_casuale)
 
 		else:
 			msg_gatto = "Hey, non ci sono ancora foto di gatti!"
@@ -563,31 +556,6 @@ async def nohomo(ctx, *, comando=None):
 				nohomo_out = nohomo_outA[:1].upper() + nohomo_outA[1:]
 				await ctx.send(f'Il saggio dice:\n*{nohomo_out}*')
 
-
-@bot.listen('on_message')
-async def hey_bot(ctx):
-		if ctx.author == bot.user:
-				return
-
-		msg = ctx.content.lower()
-		if msg.startswith('hey bot') or msg.startswith('hey culo'):
-				if ctx.author.name == "Rufus Loacker":
-						response = "Hey papà!"
-				elif ctx.author.name == "Kanmuri":
-						response = "Hey admin del mondo!"
-				elif ctx.author.name == "CowardKnight":
-						response = "Hey persona con gatti belli!"
-				else:
-						response = f'Hey {ctx.author.display_name}!'
-				await ctx.channel.send(response)
-		
-		if "good bot" in msg or "goodbot" in msg or "bravo bot" in msg:
-			await ctx.channel.send("Awwww, grazie <3 <3 <3")
-		if "bad bot" in msg or "badbot" in msg or "cattivo bot" in msg:
-			await ctx.channel.send("Così ferisci i miei sentimenti... :(")
-	
-
-
 @bot.command()
 async def indovina(ctx):
 		await ctx.send(
@@ -644,6 +612,30 @@ async def indovina(ctx):
 						break
 
 		await ctx.send("Grazie per aver giocato :)")
+
+@bot.listen('on_message')
+async def hey_bot(ctx):
+		if ctx.author == bot.user:
+				return
+
+		msg = ctx.content.lower()
+		if msg.startswith('hey bot') or msg.startswith('hey culo'):
+				if ctx.author.name == "Rufus Loacker":
+						response = "Hey papà!"
+				elif ctx.author.name == "Kanmuri":
+						response = "Hey admin del mondo!"
+				elif ctx.author.name == "CowardKnight":
+						response = "Hey persona con gatti belli!"
+				else:
+						response = f'Hey {ctx.author.display_name}!'
+				await ctx.channel.send(response)
+		
+		if "good bot" in msg or "goodbot" in msg or "bravo bot" in msg:
+			await ctx.channel.send("Awwww, grazie <3 <3 <3")
+		if "bad bot" in msg or "badbot" in msg or "cattivo bot" in msg:
+			await ctx.channel.send("Così ferisci i miei sentimenti... :(")
+		if "thanks bot" in msg or "thanksbot" in msg or "grazie bot" in msg:
+			await ctx.channel.send("Prego! ^_^")
 
 keep_alive.keep_alive()
 bot.run(TOKEN)
