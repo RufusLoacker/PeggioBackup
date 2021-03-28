@@ -27,7 +27,7 @@ flagEliminazione = True
 
 @bot.event
 async def on_ready():
-	print('PeggioBackup è pronto!')
+	print('PeggioBot è pronto!')
 
 @bot.command()
 async def gatto(ctx, *, comando=None):
@@ -84,15 +84,19 @@ async def gatto(ctx, *, comando=None):
 		
 		elif 'lista' in comando:
 			if 'gatti_db' in db.keys():
-				gatti_db = db['gatti_db']
-				print(gatti_db)
+				gatti_db = sorted(db['gatti_db'])
+				tot_gatti = 0
+				msg_gatto += "Ecco la lista dei Peggiogatti:\n\n"
 				for gatto in gatti_db:
 					gatto_db = db[gatto]
-					print(gatto_db)
 					quante_foto = len(gatto_db)
+					tot_gatti += quante_foto
 					msg_gatto += f'**{gatto.capitalize()}**: {quante_foto} foto\n'
+				msg_gatto += f'\nIn totale ci sono (circa) {tot_gatti} foto!'
 			else:
 				msg_gatto = "Hey, non ci sono ancora foto di gatti!"
+			
+			
 
 		
 		# il 'comando' sarà quindi il nome di un gatto. 
@@ -383,17 +387,18 @@ async def nando(ctx, *, messaggio_in=None):
 
 		elif comando == "lista":
 			await ctx.send("Stiamo lavorando per voi!")
-			'''
+
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 
-			await split_lista(ctx, contesti, 'Contesti')
-			await split_lista(ctx, soggetti, 'Soggetti')
-			await split_lista(ctx, verbi, 'Verbi')
-			await split_lista(ctx, complementi, 'Complementi')
+			print(f'**Contesti**: {sorted(contesti)}')
+			print(f'**Soggetti**: {sorted(soggetti)}')
+			print(f'**Verbi**: {sorted(verbi)}')
+			print(f'**Complementi**: {sorted(complementi)}')
+
 			await ctx.send(
 					f'Per aggiungere elementi, usare il comando `!nando aggiungi soggetto|verbo|complemento \"elemento da inserire\"`\nPer rimuovere elementi, usare il comando `!nando rimuovi soggetto|verbo|complemento \"elemento da rimuovere\"`'
 					)	
-			'''				
+						
 		elif comando == "stats":
 			contesti, soggetti, verbi, complementi = costruisci_liste()
 			combinazioni = len(contesti) * len(soggetti) * len(verbi) * len(complementi)
@@ -630,17 +635,21 @@ async def hey_bot(ctx):
 						response = f'Hey {ctx.author.display_name}!'
 				await ctx.channel.send(response)
 		
-		lista_bravo = ['good bot', 'goodbot', 'bravo bot']
-		if any(x in msg for x in lista_cattivo)
+		lista_good = ['good bot', 'goodbot', 'bravo bot']
+		if any(x in msg for x in lista_good):
 			await ctx.channel.send(f'Awwww, grazie {ctx.author.display_name} <3 <3 <3')
 		
 		lista_bad = ['bad bot', 'badbot', 'cattivo bot']
-		if any(x in msg for x in lista_cattivo)
+		if any(x in msg for x in lista_bad):
 			await ctx.channel.send(f'Così ferisci i miei sentimenti {ctx.author.display_name}... :(')
 		
 		lista_grazie = ['thanks bot', 'thanksbot', 'grazie bot', 'grazie culo']
-		if any(x in msg for x in lista_grazie)
+		if any(x in msg for x in lista_grazie):
 			await ctx.channel.send("Prego! ^_^")
+
+		lista_oliver = ['vero oliver']
+		if any(x in msg for x in lista_oliver):
+			await ctx.channel.send("Quello di Rufus, ovviamente.")
 
 keep_alive.keep_alive()
 bot.run(TOKEN)
