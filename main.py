@@ -39,7 +39,7 @@ async def gatto(ctx, *, comando=None):
 
 	msg_gatto = ''
 	embed = discord.Embed()
-
+	embed.set_image(url='https://c.tenor.com/ociZpU8b_Q8AAAAj/cat-meme.gif')
 	if ctx.message.attachments:
 		if comando:
 			gatto_pic = ctx.message.attachments[0].url
@@ -86,25 +86,33 @@ async def gatto(ctx, *, comando=None):
 			if 'gatti_db' in db.keys():
 				gatti_db = sorted(db['gatti_db'])
 				tot_gatti = 0
+				nuova_lista_gatti = []
 				msg_gatto += "Ecco la lista dei Peggiogatti:\n\n"
 				for gatto in gatti_db:
 					gatto_db = db[gatto]
 					quante_foto = len(gatto_db)
 					tot_gatti += quante_foto
 					msg_gatto += f'**{gatto.capitalize()}**: {quante_foto} foto\n'
-				msg_gatto += f'\nIn totale ci sono (circa) {tot_gatti} foto!'
+
+
+				for gatto in gatti_db:
+					for pic_gatto in db[gatto]:
+						if pic_gatto not in nuova_lista_gatti:
+							nuova_lista_gatti.append(pic_gatto)
+
+				print(nuova_lista_gatti)
+				tot_gatti = len(nuova_lista_gatti)
+				msg_gatto += f'\nIn totale ci sono {tot_gatti} foto!'
+
+
 			else:
 				msg_gatto = "Hey, non ci sono ancora foto di gatti!"
 			
-			
-
-		
 		# il 'comando' sarà quindi il nome di un gatto. 
 		else:
 			nome_gatto = comando
 			# Se il nome del gatto è nel db...
 			if nome_gatto in db.keys():
-				print(db[nome_gatto])
 				gatto_url = random.choice(db[nome_gatto])
 				msg_gatto = f'Ecco una foto di {nome_gatto.capitalize()}:'
 				embed.set_image(url=gatto_url)
@@ -113,7 +121,6 @@ async def gatto(ctx, *, comando=None):
 
 	# se non c'è nome di gatto, prende un gatto a caso
 	else:
-		lista_gatti = []
 		if 'gatti_db' in db.keys():
 			#scelgo un nome di gatto a caso
 			gatti_db = db['gatti_db']
@@ -210,53 +217,103 @@ async def lore(ctx, *, messaggio_in=None):
 	flagEliminazione = True
 
 	if messaggio_in:
+		
+		print("if messaggio_in: ", messaggio_in)
 		messaggio = shlex.split(messaggio_in)
-		if len(messaggio) == 3:
+		print("if messaggio_in split: ", messaggio)
+
+		if len(messaggio) >= 3:
+
+			print("if len msg = 3: ", messaggio_in)
+			print("if len msg = 3: ", messaggio)
 
 			comando = messaggio[0].lower()
 			argomento = messaggio[1]
+			argomento = argomento.strip('"')
 			lore = messaggio[2]
 
 			if comando == "aggiungi":
+				print("aggiungi - argomento: ", argomento)
+				print("aggiungi - lore: ", lore)
 				aggiungi_nandata(ctx, argomento, lore)
 				aggiungi_nandata(ctx, 'argomenti_lore', argomento)
 				if not flagDuplicato:
 					msg_out = f'Aggiunta la lore su **{argomento}**'
+					print("db[argomento] \n", db[argomento])
+					print("db[argomenti_lore \n", db['argomenti_lore'])
 				else:
 					msg_out = f'Hey, questa lore c\'è già!'
+			
+			else:
+				msg_out = "Sembra tu voglia aggiungere qualcosa. Usa le virgolette, pls!\n`!lore aggiungi \"argomento della lore\" \"testo della lore\"`"
 
-			elif comando == "rimuovi":
-				rimuovi_nandata(ctx, argomento, lore)
-				if flagEliminazione:
-					msg_out = f'Ho eliminato la lore su {argomento}!'
+		elif len(messaggio) == 2:
+
+			comando = messaggio[0].lower()
+			argomento = messaggio[1]
+			print("argomento: ", argomento)
+			argomento = argomento.strip('"')
+			print("argomento stripped: ", argomento)
+
+			if comando == 'rimuovi':
+				print("rimuovi - argomento: ", argomento)
+				if argomento in db.keys():
+					del db[argomento]
+					print("db[argomento] cancellato")
+					rimuovi_nandata(ctx, 'argomenti_lore', argomento)
+					if flagEliminazione:
+						msg_out = f'Ho eliminato la lore su {argomento}!'
+						print(db['argomenti_lore'])
+					else:
+						print("Non è stato eliminato")
+						msg_out = f'Non ho trovato la lore su {argomento}!'
 				else:
+					print("Non c'era l'argomento in db")
 					msg_out = f'Non ho trovato la lore su {argomento}!'
-		
-		else:
+			
+			else:
+				msg_out = "Sembra tu voglia rimuovere qualcosa. Usa le virgolette, pls!\n`!lore rimuovi \"argomento della lore\"`"
+
+		elif len(messaggio) == 1:
+
 			comando = messaggio_in
+			print("if len msg = 1", comando)
+
 			if comando == 'lista':
 				if 'argomenti_lore' in db.keys():
-					argomenti = db['argomenti_lore']
-					msg_out = '**Ecco una lista della lore PN:**\n\n'
-					for elem in argomenti:
-						msg_out += elem + '\n'
+					argomenti = sorted(db['argomenti_lore'])
+					msg_out = '**Ecco una lista della lore PN:**\n'
+					for argomento in argomenti:
+						if argomento in db.keys():
+							msg_out += f'{argomento}\n'
+					msg_out += "\n*Scrivi fra virgolette l'argomento che vuoi sapere!*"
 
 				else:
 					msg_out = 'Non ci sono ancora argomenti di cui parlare!'	
 
 			else:
 				argomento = comando
-				if argomento in db.keys():
+				print("argomento: ", argomento)
+				argomento = argomento.strip('"')
+				print("argomento stripped: ", argomento)
+				if argomento in db['argomenti_lore']:
+					print("argomento c'è nella lista args")
 					lore = db[argomento]
 					lore = ''.join(lore)
 					print(lore, type(lore))
 					msg_out = f'Ecco la lore su **{argomento}**:\n{lore}'
 				else:
 					msg_out = 'Non ho trovato la lore su questo argomento!'
+
+		else:
+			msg_out = "Non sono sicuro di quello che mi hai chiesto, prova a usare le virgolette!"
+
 	else:
 		msg_out = 'Devi scrivere l\'argomento su cui vuoi sapere la lore!'
 
 	await ctx.send(msg_out)
+	print()
+
 
 @bot.command()
 async def hug(ctx, *, arg: typing.Union[discord.Member, str] = None):
@@ -467,6 +524,8 @@ async def nando(ctx, *, messaggio_in=None):
 			nandata = nandata.replace(' da gli ', ' dagli ')
 		if ' da le ' in nandata:
 			nandata = nandata.replace(' da le ', ' dalle ')
+		if ' da l\'' in nandata:
+			nandata = nandata.replace(' da l\'', ' dall\'')
 		if ' in il ' in nandata:
 			nandata = nandata.replace(' in il ', ' nel ')
 		if ' in lo ' in nandata:
@@ -510,6 +569,13 @@ async def nando(ctx, *, messaggio_in=None):
 			db['nandate'] = 1
 
 		await ctx.send(nandata)
+
+		gatti_db = db['gatti_db']
+		if any(nome_gatto.lower() in nandata.lower() for nome_gatto in gatti_db):
+			nome_gatto = [nome_gatto for nome_gatto in gatti_db if nome_gatto.lower() in nandata.lower()]
+			cmd = bot.get_command("gatto")
+			for elem in nome_gatto:
+				await cmd(ctx, comando=elem)
 
 		if str.lower(soggetto_scelto) == 'non è homo se':
 			if "nohomo" in db.keys():
