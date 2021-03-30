@@ -13,7 +13,6 @@ import typing
 import tracemalloc
 from collections import Counter
 from itertools import chain
-from collections import Counter
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -29,13 +28,15 @@ flagEliminazione = True
 async def on_ready():
 	print('PeggioBot è pronto!')
 
-@bot.command()
+alias_kali = ['tettedikali', 'tette', 'kali']
+@bot.command(aliases = alias_kali)
 async def gatto(ctx, *, comando=None):
 	global flagDuplicato
 	global flagEliminazione
 
 	flagDuplicato = False
 	flagEliminazione = True
+	flagLista = False
 
 	msg_gatto = ''
 	embed = discord.Embed()
@@ -62,20 +63,16 @@ async def gatto(ctx, *, comando=None):
 			comandi = shlex.split(comando)
 			nome_gatto = comandi[1]
 			url_gatto = comandi[2]
-			print(nome_gatto)
-			print(url_gatto)
 
 			if nome_gatto in db.keys():
 				# rimuovo la foto dal database del gatto
 				gatto_db = db[nome_gatto]
-				print("prima: ", gatto_db)
 				indice = gatto_db.index(url_gatto)
 				del gatto_db[indice]
 				if gatto_db:
 					db[nome_gatto] = gatto_db
 				else:
 					del db[nome_gatto]
-				print("dopo: ", gatto_db)
 
 				msg_gatto = f'Foto di {nome_gatto.capitalize()} eliminata!'
 			else:
@@ -84,6 +81,7 @@ async def gatto(ctx, *, comando=None):
 		
 		elif 'lista' in comando:
 			if 'gatti_db' in db.keys():
+				msg_bot = await ctx.send("Sto compilando la lista, pazienta un poco!")
 				gatti_db = sorted(db['gatti_db'])
 				tot_gatti = 0
 				nuova_lista_gatti = []
@@ -100,14 +98,69 @@ async def gatto(ctx, *, comando=None):
 						if pic_gatto not in nuova_lista_gatti:
 							nuova_lista_gatti.append(pic_gatto)
 
-				print(nuova_lista_gatti)
 				tot_gatti = len(nuova_lista_gatti)
 				msg_gatto += f'\nIn totale ci sono {tot_gatti} foto!'
-
+				await msg_bot.edit(content=msg_gatto)
+				flagLista = True
 
 			else:
 				msg_gatto = "Hey, non ci sono ancora foto di gatti!"
-			
+
+		elif 'foto'	in comando:
+			comandi = shlex.split(comando)
+			nome_gatto = comandi[0].lower()
+			if nome_gatto in db.keys():
+				flagLista = True
+				
+				foto_gatto = db[nome_gatto]
+				pic_index = 0
+				embed.set_image(url=foto_gatto[pic_index])
+				msg_pics = await ctx.send(f'**{nome_gatto}** foto {(pic_index % len(foto_gatto))+1}/{len(foto_gatto)}', embed=embed)
+
+				emoji_list = ['⏮️', '⬅️', '➡️', '⏭️', '❌']
+				for emoji in emoji_list:
+					await msg_pics.add_reaction(emoji)
+
+				def check(reaction, user):
+					return user == ctx.author and str(reaction.emoji) in emoji_list
+				
+				while True:
+					try:
+						reaction, user = await bot.wait_for('reaction_add', timeout=30, check=check)
+
+						if str(reaction.emoji) == '⏮️':
+							pic_index -= 10
+						elif str(reaction.emoji) == '⬅️':
+							pic_index -= 1
+						elif str(reaction.emoji) == '➡️':
+							pic_index += 1
+						elif str(reaction.emoji) == '⏭️':
+							pic_index += 10
+						elif str(reaction.emoji) == '❌':
+							await msg_pics.edit(content=f'Grazie per aver guardato le foto di {nome_gatto.capitalize()}!', embed=None)
+							for emoji in emoji_list:
+								await msg_pics.clear_reaction(emoji)
+							break
+
+						pic_index = pic_index % len(foto_gatto)
+						print('fuori ', pic_index)
+
+						await msg_pics.remove_reaction(reaction, ctx.author)	
+
+						embed.set_image(url=foto_gatto[pic_index])
+						await msg_pics.edit(content=f'**{nome_gatto}** foto {pic_index+1}/{len(foto_gatto)}', embed=embed)
+
+					except asyncio.TimeoutError:
+						await msg_pics.edit(content=f'Grazie per aver guardato le foto di {nome_gatto.capitalize()}!', embed=None)
+						for emoji in emoji_list:
+							await msg_pics.clear_reaction(emoji)
+						break
+
+				
+
+			else:
+				msg_gatto = f'Non ho ancora foto di {nome_gatto.capitalize()}!'
+
 		# il 'comando' sarà quindi il nome di un gatto. 
 		else:
 			nome_gatto = comando
@@ -135,8 +188,16 @@ async def gatto(ctx, *, comando=None):
 
 		else:
 			msg_gatto = "Hey, non ci sono ancora foto di gatti!"
-
-	await ctx.send(msg_gatto, embed=embed)			
+	
+	if any(x in ctx.invoked_with for x in alias_kali):
+		lista_kali = [
+			'Volevi vedere una gattona hot, eh? Ecco qui:',
+			'Tieni, sporcaccione ;',
+			'Sei proprio un pervertito...'
+			]
+		msg_gatto = random.choice(lista_kali)
+	if not flagLista:
+		await ctx.send(msg_gatto, embed=embed)			
 
 # aliases: lista di comandi che triggerano la funzione
 @bot.command()
@@ -715,7 +776,18 @@ async def hey_bot(ctx):
 
 		lista_oliver = ['vero oliver']
 		if any(x in msg for x in lista_oliver):
-			await ctx.channel.send("Quello di Rufus, ovviamente.")
+			await ctx.channel.send("Il vero Oliver? Quello di Rufus, ovviamente.")
+		
+		gatti_db = db['gatti_db']
+		lista_comandi = ['!gatto', '! gatto']
+		if any(nome_gatto.lower() in msg for nome_gatto in gatti_db) and not any(comando in msg for comando in lista_comandi):
+			embed = discord.Embed()
+			nome_gatto = [nome_gatto for nome_gatto in gatti_db if nome_gatto.lower() in msg]
+			for elem in nome_gatto:
+				gatto_url = random.choice(db[elem])
+				msg_gatto = f'Ecco una foto di {elem.capitalize()}:'
+				embed.set_image(url=gatto_url)
+				await ctx.channel.send(msg_gatto, embed=embed)
 
 keep_alive.keep_alive()
 bot.run(TOKEN)

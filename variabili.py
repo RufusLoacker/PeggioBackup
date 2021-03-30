@@ -1,7 +1,7 @@
 contesti = ['']
 soggetti = ['Rufus']
 verbi = ['saluta']
-complementi = ['il cane']
+complementi = ['Ruf che finalmente ha eliminato il cane']
 
 palla8 = [
     'Per quanto posso vedere, sì', 'È certo', 'È decisamente così',
