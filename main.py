@@ -23,10 +23,38 @@ bot = commands.Bot(command_prefix=['! ', '!'], case_insensitive=True)
 flagDuplicato = False
 flagEliminazione = True
 
+def aggiungi_soldi(user_id, nandata):
+
+	#se nel db non c'è l'elenco dei soldi, lo creo
+	if 'soldi_pn' not in db.keys():
+		db['soldi_pn'] = {}
+
+	user_id = str(user_id)
+	added_amount = len(nandata)
+
+	temp_db = db['soldi_pn']
+
+	if user_id not in temp_db:
+		temp_db[user_id] = added_amount
+	else:
+		temp_db[user_id] += added_amount
+
+	total = temp_db[user_id]
+	
+	db['soldi_pn'] = temp_db
+
+	return added_amount, total
+
 
 @bot.event
 async def on_ready():
 	print('PeggioBot è pronto!')
+
+@bot.command()
+async def saldo(ctx):
+	stringa_out = db.keys()	
+	await ctx.send(stringa_out)
+
 
 alias_kali = ['tettedikali', 'tette', 'kali']
 @bot.command(aliases = alias_kali)
@@ -143,10 +171,8 @@ async def gatto(ctx, *, comando=None):
 							break
 
 						pic_index = pic_index % len(foto_gatto)
-						print('fuori ', pic_index)
 
 						await msg_pics.remove_reaction(reaction, ctx.author)	
-
 						embed.set_image(url=foto_gatto[pic_index])
 						await msg_pics.edit(content=f'**{nome_gatto}** foto {pic_index+1}/{len(foto_gatto)}', embed=embed)
 
@@ -155,8 +181,6 @@ async def gatto(ctx, *, comando=None):
 						for emoji in emoji_list:
 							await msg_pics.clear_reaction(emoji)
 						break
-
-				
 
 			else:
 				msg_gatto = f'Non ho ancora foto di {nome_gatto.capitalize()}!'
@@ -402,6 +426,7 @@ async def palla8(ctx, *, domanda=None):
 		await ctx.send(
 				f'Non mi hai fatto la domanda, {ctx.author.display_name} >.<')	
 
+#aggiunge elementi al database
 def aggiungi_nandata(ctx, comando_in, parola):
 	global flagDuplicato
 	if ctx.invoked_with == 'nando':
@@ -464,7 +489,7 @@ async def split_lista(ctx, lista, nome_lista):
 		else:
 			await ctx.send(chunk)
 
-@bot.command()
+@bot.command(aliases=['mando'])
 async def nando(ctx, *, messaggio_in=None):
 	global flagDuplicato
 	global flagEliminazione
@@ -629,7 +654,12 @@ async def nando(ctx, *, messaggio_in=None):
 		else:
 			db['nandate'] = 1
 
+		if 'mando' in ctx.invoked_with.lower():
+			nandata = "Volevi forse dire 'Nando'? Eh vabbé, comunque ecco qui una nandata:\n" + nandata
 		await ctx.send(nandata)
+
+		soldi_aggiunti, soldi_totali = aggiungi_soldi(ctx.author.id, nandata)
+		await ctx.send(f'{ctx.author.display_name}, sono stati aggiunti {soldi_aggiunti} NandoCoin al tuo conto! Ora hai un totale di {soldi_totali} NandoCoin')
 
 		gatti_db = db['gatti_db']
 		if any(nome_gatto.lower() in nandata.lower() for nome_gatto in gatti_db):
@@ -751,6 +781,7 @@ async def hey_bot(ctx):
 				return
 
 		msg = ctx.content.lower()
+		
 		if msg.startswith('hey bot') or msg.startswith('hey culo'):
 				if ctx.author.name == "Rufus Loacker":
 						response = "Hey papà!"
@@ -761,6 +792,41 @@ async def hey_bot(ctx):
 				else:
 						response = f'Hey {ctx.author.display_name}!'
 				await ctx.channel.send(response)
+
+		if 'notte bot' in msg:
+			await ctx.channel.send(f'Buonanotte {ctx.author.display_name} 🥱')
+
+		if 'oh no' in msg:
+			await ctx.channel.send('OH SÌ')
+		
+		if 'pn segreto' in msg or 'pnsegreto' in msg:
+			zalgo1 = 'Non ci crederai mai, ma i̴l̵ ̴p̴n̴ ŝ̵͈͙̇͂ë̸̻g̷̦̰͊r̴̨̲̺̟̹̯̰͖̖̀̑ë̷̡̗͙͖̼̹̅̓͘͜ţ̶͚̲́̈́͑̌̓͘͜͜ͅǫ̶̘̟̯̝̤͚̹͛͂̑̇̾̓̈́͝ͅ ̸̢̤͉̩̜̹̔͆̔̉̍͗è̷͖̟̰͈̻̳̮̣͇̜̼͑͆͗́̒͒͐̾̚'
+			zalgo2 = zalgo1 + '  ̷̡̱̫̼̠͚̣̮̻̎͐͜Ḙ̵̡̛̟̝̗͉͉̫̠̩̥̜̺͍̓͐̽̚͠R̸̨̯̱̞̝̹̱̓̉͋́̌̏̈́̂̆́͘R̶͙̗̼̪͓̈́̍͗̃̂̾̕̚͝͝͝ͅƠ̸͈̠͉̫̙̣͍̻̠̫͔͕̣̖͂̔̔̌͛̇͂̇̉̈́̍̕ͅŘ̶̹̖̮͔̤͉̦͠͝ͅ'
+			zalgo3 = zalgo1 + ' R̴̫͈̙͍̥̿̎̐̀́͌̉̊̌̈́̿̀͘U̴̢̦̗̘͉̠͈͎̲̘͑̆̄ͅN̴̛̅̊͗̓̽̈̏̑̆͂͌̿̕͘͜͠͝'
+			zalgo4 = zalgo3 + ' A̷̧̢̡̹͔̤̖̤̝̦̟͔̤̖͔̫̘̮̝̐̇͋̈́̐̆̂͒̈̐͜ͅẈ̷͗̓̿À̴̧̨̭̯̠̩̳͉̰̀͌̇̆̄̄̋͌̀̍̉̚̚ͅY̸̢̨̨̡̘͍̮̩̼̝̟̹͇͋͆͑͘͘'
+			Zalgo = [zalgo1, zalgo2, zalgo3, zalgo4]
+			msg_zalgo = await ctx.channel.send(Zalgo[0])
+			await asyncio.sleep(1)
+			abort = '`aborting'
+			msg_abort = await ctx.channel.send(abort + '`')
+			n = 1
+			while n <= 3:
+				abort += '.'
+				await asyncio.sleep(0.7)
+				await msg_zalgo.edit(content=Zalgo[n])
+				await asyncio.sleep(0.3)
+				await msg_abort.edit(content=abort + '`')
+				n += 1
+
+			await asyncio.sleep(0.3)
+			await msg_zalgo.delete()
+			await asyncio.sleep(0.3)
+			await msg_abort.delete()
+			await ctx.delete()
+
+
+		if any(x in msg for x in variabili.lista_parolacce):
+			await ctx.channel.send(random.choice(variabili.lista_risposte_parolacce))
 		
 		lista_good = ['good bot', 'goodbot', 'bravo bot']
 		if any(x in msg for x in lista_good):

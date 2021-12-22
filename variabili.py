@@ -37,3 +37,36 @@ bene_male = ['Buono', 'Neutrale', 'Malvagio', 'Saggio', 'Scemo']
 nohomo = [
   'Non è homo se c\'è Kan'
 ]
+
+lista_parolacce = [
+	'bagascia',
+	'baldracca',
+	'bastardo',
+	'cazzo',
+	'coglione',
+	'culo',
+	'fanculo',
+	'fica',
+	'finocchio',
+	'fregna',
+	'frocio',
+	'merda',
+	'mignotta',
+	'minchia',
+	'puttana',
+	'ricchione',
+	'sborra',
+	'stronzo',
+	'taco',
+	'topa',
+	'troia',
+	'vaffanculo',
+	'zoccola'
+]
+
+lista_risposte_parolacce = [
+	'Hey, non si dicono queste cose!',
+	'Pulisciti subito la bocca col sapone...',
+	'Spero tu non parli a tua madre con questi toni.',
+	'Potrei offendermi, se dici ancora certe cose'
+]
